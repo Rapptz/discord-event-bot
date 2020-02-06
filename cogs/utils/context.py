@@ -35,3 +35,90 @@ class Context(commands.Context):
             return await self.send(file=discord.File(fp, filename='message_too_long.txt'), **kwargs)
         else:
             return await self.send(content)
+
+    async def prompt(self, message, *, timeout=60.0, delete_after=True):
+        assert self.channel.permissions_for(self.me).add_reactions
+
+        msg = await self.send(message)
+        author_id = self.author.id
+        confirm = None
+
+        def check(payload):
+            nonlocal confirm
+
+            if payload.message_id != msg.id or payload.user_id != author_id:
+                return False
+
+            codepoint = str(payload.emoji)
+
+            if codepoint == '\N{WHITE HEAVY CHECK MARK}':
+                confirm = True
+                return True
+            elif codepoint == '\N{CROSS MARK}':
+                confirm = False
+                return True
+
+            return False
+
+        for emoji in ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}'):
+            await msg.add_reaction(emoji)
+
+        try:
+            await self.bot.wait_for('raw_reaction_add', check=check, timeout=timeout)
+        except asyncio.TimeoutError:
+            confirm = None
+
+        try:
+            if delete_after:
+                await msg.delete()
+        except discord.HTTPException:
+            pass
+        finally:
+            return confirm
+
+    async def request(self, message, converter=commands.MemberConverter(), *, timeout=60.0, delete_after=True):
+        """Request information from the user interactively.
+
+        Parameters
+        -----------
+        message: str
+            The message to show along with the prompt.
+        converter: :class:`Converter`
+            The converter to convert the requested data from.
+        timeout: float
+            How long to wait before returning.
+        delete_after: bool
+            Whether to delete the confirmation message after we're done.
+
+        Returns
+        --------
+        Optional[Any]
+            The result of the converter conversion applied to the message.
+            If conversion fails then ``None`` is returned.
+            If there's a timeout then ``...`` is returned.
+        """
+
+        await self.send(message)
+        author_id = self.author.id
+        channel_id = self.channel.id
+
+        def check(m):
+            return m.author.id == author_id and m.channel.id == channel_id
+
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=timeout)
+        except asyncio.TimeoutError:
+            result = ...
+        else:
+            try:
+                result = await converter.convert(self, msg.content)
+            except Exception:
+                result = None
+
+        try:
+            if delete_after:
+                await msg.delete()
+        except discord.HTTPException:
+            pass
+        finally:
+            return result

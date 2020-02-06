@@ -201,7 +201,7 @@ class Item:
         if self.in_stock is None:
             self.in_stock = self.total
 
-        to_compile = f'def func(self, user):\n{textwrap.indent(self.code, "  ")}'
+        to_compile = f'async def func(self, ctx, user):\n{textwrap.indent(self.code, "  ")}'
         if self.predicate is None:
             to_compile = f'{to_compile}\n\ndef pred(self, user):\n  return True'
         else:
@@ -222,8 +222,8 @@ class Item:
         o['data_type'] = 2
         return o
 
-    def use(self, user):
-        return self._caller(self, user)
+    async def use(self, user):
+        return await self._caller(self, ctx, user)
 
     def usable_by(self, user):
         return not user.is_dead() and not user.is_cured() and self._pred(self, user)
@@ -755,7 +755,7 @@ class Virus(commands.Cog):
         if not item.usable_by(user):
             return await ctx.send("Can't let you do that chief.")
 
-        state = user.use(item)
+        state = await user.use(ctx, item)
         await self.storage.save()
 
         if state is State.already_dead:
