@@ -101,6 +101,9 @@ class Participant:
     def is_dead(self):
         return self.sickness >= 100
 
+    def is_cured(self):
+        return self.infected and self.sickness == 0
+
     def is_susceptible(self):
         return not self.infected and not self.healer
 
@@ -223,10 +226,11 @@ class Item:
         return self._caller(self, user)
 
     def usable_by(self, user):
-        return not user.is_dead() and self._pred(self, user)
+        return not user.is_dead() and not user.is_cured() and self._pred(self, user)
 
     def is_buyable_for(self, user):
         return (not user.is_dead() and
+                not user.is_cured() and
                 self.in_stock and
                 self.unlocked and
                 self._pred(self, user) and
