@@ -478,6 +478,7 @@ class Virus(commands.Cog):
 
     async def send_dead_message(self, participant):
         guild = self.bot.get_guild(DISCORD_PY)
+        total = self.storage['stats'].dead
 
         try:
             ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
