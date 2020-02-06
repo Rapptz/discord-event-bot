@@ -881,8 +881,8 @@ class Virus(commands.Cog):
         e.description = msg
 
         infected = sorted((p for p in participants if p.is_infectious()), key=lambda p: p.sickness, reverse=True)
-        most_sick = '\n'.join(f'{i}) <@{p.member_id}> [{p.sickness}]' for i, p in enumerate(infected[:5], start=1))
-        least_sick = '\n'.join(f'{i}) <@{p.member_id}> [{p.sickness}]' for i, p in enumerate(infected[-5:], start=1))
+        most_sick = '\n'.join(f'{i + 1}) <@{p.member_id}> [{p.sickness}]' for i, p in enumerate(infected[:5]))
+        least_sick = '\n'.join(f'{i + 1}) <@{p.member_id}> [{p.sickness}]' for i, p in enumerate(reversed(infected[-5:])))
 
         e.add_field(name='Most Sick', value=most_sick or 'No one')
         e.add_field(name='Least Sick', value=least_sick or 'No one')
