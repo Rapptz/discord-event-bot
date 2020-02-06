@@ -40,7 +40,7 @@ raw = [
         'description': 'A good night\'s rest.',
         'code': dedent("""
             if user.infected:
-                return user.sickness.add_sickness(-5)
+                return user.add_sickness(-5)
         """),
     },
     {
