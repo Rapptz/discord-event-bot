@@ -289,7 +289,7 @@ class Virus(commands.Cog):
         }
 
     def cog_check(self, ctx):
-        return ctx.guild and ctx.guild.id == DISCORD_PY
+        return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID)
 
     @staticmethod
     def get_unique(number, elements, already_seen):
