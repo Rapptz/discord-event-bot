@@ -21,7 +21,8 @@ class HelpCommand(commands.HelpCommand):
         e = discord.Embed(title=f'{command.qualified_name} {command.signature}', colour=0xFD8063)
         e.description = command.help
         if isinstance(command, commands.Group):
-            for child in command.commands:
+            filtered = await self.filter_commands(command.commands, sort=True)
+            for child in filtered:
                 e.add_field(name=f'{child.qualified_name} {child.signature}', value=child.short_doc, inline=False)
 
         await self.get_destination().send(embed=e)
