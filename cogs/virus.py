@@ -180,8 +180,8 @@ class Participant:
         item.in_stock -= 1
         self.backpack[item.emoji] = item.uses
 
-    def use(self, item):
-        state = item.use(self)
+    async def use(self, ctx, item):
+        state = await item.use(ctx, self)
         self.backpack[item.emoji] -= 1
         return state
 
@@ -231,7 +231,7 @@ class Item:
         o['data_type'] = 2
         return o
 
-    async def use(self, user):
+    async def use(self, ctx, user):
         return await self._caller(self, ctx, user)
 
     def usable_by(self, user):
