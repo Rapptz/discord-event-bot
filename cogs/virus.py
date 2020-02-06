@@ -423,7 +423,7 @@ class Virus(commands.Cog):
                 continue
 
             if user.is_infectious():
-                died = user.add_sickness(10)
+                died = user.add_sickness(20)
                 if died is State.dead:
                     await self.kill(user)
 
