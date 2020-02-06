@@ -479,7 +479,7 @@ class Virus(commands.Cog):
         guild = self.bot.get_guild(DISCORD_PY)
 
         try:
-            ping = guild.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
         except discord.HTTPException:
             return
 
@@ -502,7 +502,7 @@ class Virus(commands.Cog):
         guild = self.bot.get_guild(DISCORD_PY)
 
         try:
-            ping = guild.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
         except discord.HTTPException:
             return
 
@@ -524,7 +524,7 @@ class Virus(commands.Cog):
         guild = self.bot.get_guild(DISCORD_PY)
 
         try:
-            ping = guild.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
         except discord.HTTPException:
             return
 
@@ -539,7 +539,7 @@ class Virus(commands.Cog):
         guild = self.bot.get_guild(DISCORD_PY)
 
         try:
-            ping = guild.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
         except discord.HTTPException:
             return
 
