@@ -486,6 +486,10 @@ class Virus(commands.Cog):
         # of getting infected
         cutoff = total_sickness / 1000
 
+        # If we're masked we get *another* bonus
+        if participant.masked:
+            cutoff *= 0.65
+
         if random.random() < cutoff:
             # got infected
             await self.infect(participant)
