@@ -553,6 +553,9 @@ class Virus(commands.Cog):
         if message.guild is None or message.guild.id != DISCORD_PY:
             return
 
+        if message.author.id == self.bot.user.id:
+            return
+
         user = await self.get_participant(message.author.id)
         if user.is_susceptible():
             await self.potentially_infect(message.channel.id, user)
