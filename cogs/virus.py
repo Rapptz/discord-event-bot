@@ -223,7 +223,7 @@ class Item:
         return self._caller(self, user)
 
     def usable_by(self, user):
-        return self._pred(self, user)
+        return not user.is_dead() and self._pred(self, user)
 
     def is_buyable_for(self, user):
         return (self.in_stock and
