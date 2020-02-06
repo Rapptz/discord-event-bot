@@ -122,3 +122,9 @@ class Context(commands.Context):
             pass
         finally:
             return result
+
+    async def silent_react(self, emoji):
+        try:
+            await self.message.add_reaction(emoji)
+        except discord.HTTPException:
+            pass
