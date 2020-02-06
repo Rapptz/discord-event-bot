@@ -2,6 +2,7 @@ from discord.ext import commands
 import config
 import logging
 import datetime
+import sys
 import discord
 import traceback
 
