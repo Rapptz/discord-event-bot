@@ -22,6 +22,7 @@ EVENT_ID = 674833398744743936
 INFECTED_ROLE_ID = 674811235190964235
 HEALER_ROLE_ID = 674838998736437248
 DISCORD_PY = 336642139381301249
+MOD_TESTING_ID = 568662293190148106
 
 # GENERAL_ID = 182325885867786241
 # SNAKE_PIT_ID = 182328316676538369
@@ -289,7 +290,7 @@ class Virus(commands.Cog):
         }
 
     def cog_check(self, ctx):
-        return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID)
+        return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID, MOD_TESTING_ID)
 
     @staticmethod
     def get_unique(number, elements, already_seen):
@@ -606,7 +607,13 @@ class Virus(commands.Cog):
 
         user = await self.get_participant(ctx.author.id)
         if not item.is_buyable_for(user):
-            return await ctx.send("Hm.. doesn't seem like you can buy that one bub.")
+            dialogue = [
+                "Hm.. doesn't seem like you can buy that one bub.",
+                "For some reason the cosmic rays are telling me that this isn't allowed to be purchased.",
+                "Whoops, the item fell and I need to go look for it. Maybe it doesn't like you?",
+                "Nothing to see here friend \N{SLEUTH OR SPY}\ufe0f",
+            ]
+            return await ctx.send(random.choice(dialogue))
 
         user.buy(item)
         await self.storage.save()
