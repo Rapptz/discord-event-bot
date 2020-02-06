@@ -621,7 +621,7 @@ class Virus(commands.Cog):
 
     @shop_buy.error
     async def shop_buy_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
+        if isinstance(error, commands.CheckFailure) and self._shop_restocking:
             await ctx.send('Sorry, the store is being re-stocked right now...')
 
     @shop.command(name='restock', aliases=['unlock', 'lock'])
