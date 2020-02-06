@@ -837,6 +837,18 @@ class Virus(commands.Cog):
         ]
         await ctx.send('\n'.join(to_send))
 
+    @gm.command(name='rates')
+    async def gm_rates(self, ctx):
+        to_send = []
+        for channel_id, authors in self._authors.items():
+            if len(authors) == 0:
+                to_send.append(f'<#{channel_id}>: 0')
+            else:
+                total = sum(p.sickness_rate for p in authors) / len(authors)
+                to_send.append(f'<#{channel_id}>: {total/1000:.3%}')
+
+        await ctx.send('\n'.join(to_send))
+
     @commands.command(name='stats')
     async def _stats(self, ctx):
         """Stats on the outbreak."""
