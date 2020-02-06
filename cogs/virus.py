@@ -32,6 +32,14 @@ MOD_TESTING_ID = 568662293190148106
 # HEALER_ROLE_ID = 674854310655557633
 # DISCORD_PY = 182325885867786241
 
+def weighted_random(pairs):
+    total = sum(weight for weight, _ in pairs)
+    rand = random.randint(1, total)
+    for weight, value in pairs:
+        rand -= weight
+        if rand <= 0:
+            return value
+
 class UniqueCappedList(Sequence):
     def __init__(self, maxlen):
         self.data = deque(maxlen=maxlen)
@@ -139,10 +147,10 @@ class Participant:
         if number is None:
             # 1% chance of gaining +3
             # 5% chance of gaining +1
-            roll = random.random()
-            if roll < 0.01:
+            roll = weighted_random([(1, 'a'), (5, 'b'), (94, None)])
+            if roll == 'a':
                 self.sickness += 5 if self.immunocompromised else 3
-            elif roll < 0.05:
+            elif roll == 'b':
                 self.sickness += 2 if self.immunocompromised else 1
         else:
             self.sickness += number
@@ -208,6 +216,7 @@ class Item:
             to_compile = f'{to_compile}\n\ndef pred(self, user):\n{textwrap.indent(self.predicate, "  ")}'
 
         env = globals()
+        env['weighted_random'] = weighted_random
 
         try:
             exec(to_compile, env)
