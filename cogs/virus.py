@@ -869,12 +869,20 @@ class Virus(commands.Cog):
         """Stats on the outbreak."""
 
         stats = self.storage['stats']
-        participants = len(self.storage['participants'])
-        msg = f'Total Participants: {participants}\nDead: {stats.dead}\n' \
+        participants = self.storage['participants']
+        msg = f'Total Participants: {len(participants)}\nDead: {stats.dead}\n' \
               f'Infected: {stats.infected - stats.cured - stats.dead}\nHealers: {stats.healers}\nCured: {stats.cured}\n'
 
-        await ctx.send(msg)
+        e = discord.Embed(title='Stats')
+        e.description = msg
 
+        infected = sorted((p for p in participants if p.infected), key=lambda p: p.sickness, reverse=True)
+        most_sick = '\n'.join(f'{i}) <@{p.member_id}>' for i, p in enumerate(infected[:5], start=1))
+        least_sick = '\n'.join(f'{i}) <@{p.member_id}>' for i, p in enumerate(infected[-5:], start=1))
+
+        e.add_field(name='Most Sick', value=most_sick or 'No one')
+        e.add_field(name='Least Sick', value=least_sick or 'No one')
+        await ctx.send(embed=e)
 
 def setup(bot):
     bot.add_cog(Virus(bot))
