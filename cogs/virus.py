@@ -226,7 +226,8 @@ class Item:
         return not user.is_dead() and self._pred(self, user)
 
     def is_buyable_for(self, user):
-        return (self.in_stock and
+        return (not user.is_dead() and
+                self.in_stock and
                 self.unlocked and
                 self._pred(self, user) and
                 self.emoji not in user.backpack)
