@@ -3,6 +3,7 @@ import config
 import logging
 import datetime
 import discord
+import traceback
 
 from cogs.utils import context
 
@@ -52,6 +53,20 @@ class EventBot(commands.Bot):
             await self.invoke(ctx)
         else:
             self.dispatch('regular_message', message)
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.NoPrivateMessage):
+            await ctx.author.send('This command cannot be used in private messages.')
+        elif isinstance(error, commands.DisabledCommand):
+            await ctx.author.send('Sorry. This command is disabled and cannot be used.')
+        elif isinstance(error, commands.CommandInvokeError):
+            original = error.original
+            if not isinstance(original, discord.HTTPException):
+                print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+                traceback.print_tb(original.__traceback__)
+                print(f'{original.__class__.__name__}: {original}', file=sys.stderr)
+        elif isinstance(error, commands.ArgumentParsingError):
+            await ctx.send(error)
 
 def main():
     logging.getLogger('discord').setLevel(logging.INFO)
