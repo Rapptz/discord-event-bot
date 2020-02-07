@@ -127,8 +127,8 @@ class Participant:
     def is_infectious(self):
         return self.infected and self.sickness not in (0, 100)
 
-    def infect(self):
-        if self.infected:
+    def infect(self, *, force=False):
+        if self.infected and not force:
             return False
 
         self.infected = True
@@ -515,6 +515,17 @@ class Virus(commands.Cog):
 
         await self.send_infect_message(user)
 
+    async def reinfect(self, user):
+        # Causes a previously cured user to be reinfected
+        if user.is_cured():
+            self.storage['stats'].cured -= 1
+        elif user.is_susceptible():
+            return await self.infect(user)
+
+        user.infect(force=True)
+        await self.storage.save()
+        await self.send_reinfect_message(user)
+
     async def kill(self, user):
         self.storage['stats'].dead += user.kill()
         await self.storage.save()
@@ -581,7 +592,6 @@ class Virus(commands.Cog):
         await self.storage.save()
 
     async def send_dead_message(self, participant):
-        guild = self.bot.get_guild(DISCORD_PY)
         total = self.storage['stats'].dead
 
         try:
@@ -605,7 +615,6 @@ class Virus(commands.Cog):
 
     async def send_infect_message(self, participant):
         total = self.storage['stats'].infected
-        guild = self.bot.get_guild(DISCORD_PY)
 
         try:
             ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
@@ -627,7 +636,6 @@ class Virus(commands.Cog):
 
     async def send_cured_message(self, participant):
         total = self.storage['stats'].cured
-        guild = self.bot.get_guild(DISCORD_PY)
 
         try:
             ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
@@ -642,7 +650,6 @@ class Virus(commands.Cog):
 
     async def send_healer_message(self, participant):
         total = self.storage['stats'].healers
-        guild = self.bot.get_guild(DISCORD_PY)
 
         try:
             ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
@@ -653,6 +660,19 @@ class Virus(commands.Cog):
             await self.log_channel.send(f'{ping} is now a healer...? Wonder what that means. Rather rare, only {total} of them.')
         except discord.HTTPException:
             pass
+
+    async def send_reinfect_message(self, participant):
+        try:
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+        except discord.HTTPException:
+            return
+
+        stats = self.storage['stats']
+
+        try:
+            await self.log_channel.send(f'{ping} has gotten reinfected... Cured count is down to {stats.cured}.')
+        except discord.HTTPException:
+            return
 
     @commands.Cog.listener()
     async def on_regular_message(self, message):
