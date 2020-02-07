@@ -773,13 +773,21 @@ class Virus(commands.Cog):
         new_items = [Item(**data) for data in items.raw]
         tally = []
 
-        # I'm only going to add items, I can't remove items.
-        # Just lock them if they don't need to be there.
+        # Items are only going to be added at the end
+        # Items won't be removed (they can just be locked)
+        # This simplifies the code checking for this
+        diff_attributes = ('code', 'predicate', 'total', 'name', 'uses', 'description')
         for new, old in itertools.zip_longest(new_items, pre_existing):
             if old is None:
                 if new is not None:
                     tally.append(new)
                 continue
+
+            if any(getattr(old, attr) != getattr(new, attr) for attr in diff_attributes):
+                # These are the two attributes that really rely on storage
+                new.unlocked = old.unlocked
+                new.in_stock = old.in_stock
+                tally.append(new)
             else:
                 tally.append(old)
 
