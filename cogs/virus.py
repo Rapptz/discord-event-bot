@@ -212,6 +212,10 @@ class Participant:
             raise VirusError("I'm sure they know how to treat themselves, we've got others to worry about for now.")
 
         tomorrow = tomorrow_date()
+        now = datetime.datetime.utcnow()
+        if other.immune_until and other.immune_until >= now:
+            raise VirusError("This person seems to have already been treated, let them go for now.")
+
         if self.last_heal and self.last_heal >= tomorrow:
             self.healed = []
 
@@ -221,9 +225,9 @@ class Participant:
         if other.member_id in self.healed:
             raise VirusError("This person's already been treated today, other people need to be treated too.")
 
-        self.last_heal = datetime.datetime.utcnow()
+        self.last_heal = now
         self.healed.append(other.member_id)
-        other.immune_until = self.last_heal + datetime.timedelta(hours=4)
+        other.immune_until = now + datetime.timedelta(hours=4)
         if other.sickness != 0:
             return other.add_sickness(random.randint(-20, -10))
 
