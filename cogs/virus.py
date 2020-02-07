@@ -558,7 +558,7 @@ class Virus(commands.Cog):
             if p.is_infectious():
                 roll = random.random()
                 if roll < 0.1:
-                    state = p.add_sickness(-(base * (1 - p.sickness_rate / 100)))
+                    state = p.add_sickness(int(-(base * (1 - p.sickness_rate / 100))))
                     await self.process_state(state, p, cause=healer)
 
         await self.storage.save()
@@ -815,12 +815,20 @@ class Virus(commands.Cog):
     async def process_state(self, state, user, *, member=None, cause=None):
         if state is State.dead:
             if cause is not None:
-                self.storage['stats'].people_killed[str(cause.member_id)] += 1
+                data = self.storage['stats'].people_killed
+                try:
+                    data[str(cause.member_id)] += 1
+                except KeyError:
+                    data[str(cause.member_id)] = 1
 
             await self.kill(user)
         elif state is State.cured:
             if cause is not None:
-                self.storage['stats'].people_cured[str(cause.member_id)] += 1
+                data = self.storage['stats'].people_cured
+                try:
+                    data[str(cause.member_id)] += 1
+                except KeyError:
+                    data[str(cause.member_id)] = 1
 
             await self.cure(user)
         elif state is State.become_healer:
@@ -979,7 +987,7 @@ class Virus(commands.Cog):
     async def heal(self, ctx, *, member: discord.Member):
         """Tries to treat a member?"""
 
-        user = await self.get_participant(ctx.author)
+        user = await self.get_participant(ctx.author.id)
         if not user.healer:
             dialogue = [
                 "Uh, you sure you're qualified to do that?",
@@ -989,7 +997,7 @@ class Virus(commands.Cog):
             ]
             return await ctx.send(random.choice(dialogue))
 
-        other = await self.get_participant(member)
+        other = await self.get_participant(member.id)
         state = user.heal(other)
         await self.process_state(state, other, member=member, cause=user)
         dialogue = [
