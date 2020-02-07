@@ -212,7 +212,7 @@ class Participant:
             raise VirusError("I'm sure they know how to treat themselves, we've got others to worry about for now.")
 
         tomorrow = tomorrow_date()
-        if self.last_heal and tomorrow >= self.last_heal:
+        if self.last_heal and self.last_heal >= tomorrow:
             self.healed = []
 
         if len(self.healed) >= MAX_ALLOWED_HEALS:
