@@ -600,7 +600,7 @@ class Virus(commands.Cog):
             f'{ping} is officially infected. Feel free to stay away from them and {total-1} more.',
             f"Ya know, shaming someone for being sick isn't very nice. Protect {ping} and their {total-1} friends.",
             f"Unfortunately {ping} has fallen ill. Get well soon. Oh and {total} infected so far.",
-            f'"from:{ping} sick" might bring up some interesting results <:rooThink:596576798351949847> ({total} infected)',
+            f'"from:{ping} infected" might bring up some interesting results <:rooThink:596576798351949847> ({total} infected)',
         ]
 
         try:
