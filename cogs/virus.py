@@ -352,7 +352,7 @@ class Virus(commands.Cog):
     def cog_check(self, ctx):
         return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID, MOD_TESTING_ID)
 
-    async def cog_error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, VirusError):
             await ctx.send(error)
 
