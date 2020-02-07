@@ -23,6 +23,7 @@ INFECTED_ROLE_ID = 674811235190964235
 HEALER_ROLE_ID = 674838998736437248
 DISCORD_PY = 336642139381301249
 MOD_TESTING_ID = 568662293190148106
+MAX_ALLOWED_HEALS = 3
 
 # GENERAL_ID = 182325885867786241
 # SNAKE_PIT_ID = 182328316676538369
@@ -39,6 +40,13 @@ def weighted_random(pairs):
         rand -= weight
         if rand <= 0:
             return value
+
+def tomorrow_date(relative=None):
+    now = relative or datetime.datetime.utcnow()
+    return datetime.datetime.combine(now.date(), datetime.time()) + datetime.timedelta(days=1)
+
+class VirusError(commands.CommandError):
+    pass
 
 class UniqueCappedList(Sequence):
     def __init__(self, maxlen):
@@ -87,8 +95,9 @@ class Participant:
     death: typing.Optional[datetime.datetime] = None
     sickness: int = 0
     backpack: typing.Dict[str, bool] = dataclasses.field(default_factory=dict)
-    # healed: typing.List[int] = dataclasses.field(default_factory=list)
-    # last_heal: typing.Optional[datetime.datetime] = None
+    healed: typing.List[int] = dataclasses.field(default_factory=list)
+    last_heal: typing.Optional[datetime.datetime] = None
+    immune_until: typing.Optional[datetime.datetime] = None
 
     data_type: dataclasses.InitVar[int] = 1
 
@@ -176,6 +185,13 @@ class Participant:
 
         return min(base * 1.5, 100.0) if self.immunocompromised else base
 
+    @property
+    def base_healing(self):
+        # The base healing is an inverse of the sickness
+        # ergo, the less sick you are the better your healing prowess.
+        base = 5 * (self.sickness / 1000.0)
+        return base / 2.0 if self.immunocompromised else base
+
     def buy(self, item):
         item.in_stock -= 1
         self.backpack[item.emoji] = item.uses
@@ -184,6 +200,32 @@ class Participant:
         state = await item.use(ctx, self)
         self.backpack[item.emoji] -= 1
         return state
+
+    def heal(self, other):
+        if other.is_dead():
+            raise VirusError("I'm afraid they're already dead.")
+
+        if other.is_cured():
+            raise VirusError("You can't heal those who are already cured.")
+
+        if other.healer:
+            raise VirusError("I'm sure they know how to treat themselves, we've got others to worry about for now.")
+
+        tomorrow = tomorrow_date()
+        if self.last_heal and tomorrow >= self.last_heal:
+            self.healed = []
+
+        if len(self.healed) >= MAX_ALLOWED_HEALS:
+            raise VirusError("Don't push yourself too hard, you've already done enough.")
+
+        if other.member_id in self.healed:
+            raise VirusError("This person's already been treated today, other people need to be treated too.")
+
+        self.last_heal = datetime.datetime.utcnow()
+        self.healed.append(other.member_id)
+        other.immune_until = self.last_heal + datetime.timedelta(hours=4)
+        if other.sickness != 0:
+            return other.add_sickness(random.randint(-20, -10))
 
     def to_json(self):
         o = dataclasses.asdict(self)
@@ -252,6 +294,10 @@ class Stats:
     dead: int = 0
     cured: int = 0
 
+    people_cured: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
+    people_infected: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
+    people_killed: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
+
     data_type: dataclasses.InitVar[int] = 3
 
     def to_json(self):
@@ -305,6 +351,10 @@ class Virus(commands.Cog):
 
     def cog_check(self, ctx):
         return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID, MOD_TESTING_ID)
+
+    async def cog_error(self, ctx, error):
+        if isinstance(error, VirusError):
+            await ctx.send(error)
 
     @staticmethod
     def get_unique(number, elements, already_seen):
@@ -494,6 +544,25 @@ class Virus(commands.Cog):
             # got infected
             await self.infect(participant)
 
+    async def surround_healing(self, channel_id, healer):
+        participants = self._authors[channel_id]
+        if len(participants) == 0:
+            return
+
+        # The surround healing algorithm is based on a few things
+        # 1) a base healing rate which is inversed of the sickness
+        # 2) player based modifiers
+        # 3) an actual roll saying it's possible
+        base = healer.base_healing
+        for p in participants:
+            if p.is_infectious():
+                roll = random.random()
+                if roll < 0.1:
+                    state = p.add_sickness(-(base * (1 - p.sickness_rate / 100)))
+                    await self.process_state(state, p, cause=healer)
+
+        await self.storage.save()
+
     async def send_dead_message(self, participant):
         guild = self.bot.get_guild(DISCORD_PY)
         total = self.storage['stats'].dead
@@ -577,12 +646,18 @@ class Virus(commands.Cog):
             return
 
         user = await self.get_participant(message.author.id)
+        if user.healer:
+            # This is an if block because healers can also be infected
+            # which means that they should both do their passive heal and also get
+            # increasingly sick
+            await self.surround_healing(message.channel.id, user)
+
         if user.is_susceptible():
             await self.potentially_infect(message.channel.id, user)
         elif user.is_infectious():
-            died = user.add_sickness()
-            if died is State.dead:
-                await self.kill(user)
+            if user.immune_until is None or user.immune_until > message.created_at:
+                state = user.add_sickness()
+                await self.process_state(state, user)
 
         self._authors[message.channel.id].append(user)
 
@@ -737,6 +812,27 @@ class Virus(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    async def process_state(self, state, user, *, member=None, cause=None):
+        if state is State.dead:
+            if cause is not None:
+                self.storage['stats'].people_killed[str(cause.member_id)] += 1
+
+            await self.kill(user)
+        elif state is State.cured:
+            if cause is not None:
+                self.storage['stats'].people_cured[str(cause.member_id)] += 1
+
+            await self.cure(user)
+        elif state is State.become_healer:
+            self.storage['stats'].healers += 1
+            try:
+                await member.add_roles(discord.Object(id=HEALER_ROLE_ID))
+            except discord.HTTPException:
+                pass
+            finally:
+                await self.storage.save()
+                await self.send_healer_message(user)
+
     @backpack.command(name='use')
     async def backpack_use(self, ctx, *, emoji: str):
         """Use an item from your backpack.
@@ -773,19 +869,8 @@ class Virus(commands.Cog):
 
         if state is State.already_dead:
             return await ctx.send("The dead can't use items...")
-        elif state is State.dead:
-            await self.kill(user)
-        elif state is State.cured:
-            await self.cure(user)
-        elif state is State.become_healer:
-            self.storage['stats'].healers += 1
-            try:
-                await ctx.author.add_roles(discord.Object(id=HEALER_ROLE_ID))
-            except discord.HTTPException:
-                pass
-            finally:
-                await self.storage.save()
-                await self.send_healer_message(user)
+        else:
+            await self.process_state(state, user, member=ctx.author)
 
         await ctx.send('The item was used... I wonder what happened?')
 
@@ -810,6 +895,8 @@ class Virus(commands.Cog):
             badges.append('\N{STAFF OF AESCULAPIUS}\ufe0f')
         if user.immunocompromised:
             badges.append('\U0001fa78')
+        if user.immune_until and user.immune_until > ctx.message.created_at:
+            badges.append('\N{FLEXED BICEPS}')
 
         embed.description = f'Sickness: [{user.sickness}/100]'
         embed.add_field(name='Badges', value=' '.join(badges) or 'None')
@@ -887,6 +974,30 @@ class Virus(commands.Cog):
         e.add_field(name='Most Sick', value=most_sick or 'No one')
         e.add_field(name='Least Sick', value=least_sick or 'No one')
         await ctx.send(embed=e)
+
+    @commands.command()
+    async def heal(self, ctx, *, member: discord.Member):
+        """Tries to treat a member?"""
+
+        user = await self.get_participant(ctx.author)
+        if not user.healer:
+            dialogue = [
+                "Uh, you sure you're qualified to do that?",
+                "You know some people go to school for years before being able to do anything close to what you're implying.",
+                "Ah yeah... that didn't work. I remember those days.",
+                "I'm afraid I'm gonna need to see some papers buddy.",
+            ]
+            return await ctx.send(random.choice(dialogue))
+
+        other = await self.get_participant(member)
+        state = user.heal(other)
+        await self.process_state(state, other, member=member, cause=user)
+        dialogue = [
+            (2, "*some sound effect*"),
+            (7, "Congrats, seems like this might have done something"),
+            (1, "Uh... let's just hope whatever you did worked."),
+        ]
+        await ctx.send(weighted_random(dialogue))
 
 def setup(bot):
     bot.add_cog(Virus(bot))
