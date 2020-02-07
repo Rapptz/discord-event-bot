@@ -478,7 +478,7 @@ class Virus(commands.Cog):
         healers = set(guild.get_role(HEALER_ROLE_ID).members)
 
         try:
-            await self.new_virus_day(guild, infected, healers, 2, 1)
+            await self.new_virus_day(guild, infected, healers, 1, 1)
         except discord.HTTPException:
             pass
 
@@ -491,7 +491,7 @@ class Virus(commands.Cog):
                 continue
 
             if user.is_infectious():
-                died = user.add_sickness(10)
+                died = user.add_sickness(15)
                 if died is State.dead:
                     await self.kill(user)
 
