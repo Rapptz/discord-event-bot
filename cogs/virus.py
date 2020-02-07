@@ -567,6 +567,19 @@ class Virus(commands.Cog):
 
         await self.storage.save()
 
+    async def apply_sickness_to_all(self, channel, sickness, *, cause=None):
+        # A helper function to help apply a sickness to all
+        # recent people in a channel (i.e. an area)
+
+        authors = {m.author async for m in channel.history(limit=100)}
+        for author in authors:
+            participant = await self.get_participant(author.id)
+            if participant.is_infectious():
+                state = participant.add_sickness(sickness)
+                await self.process_state(state, participant, cause=cause)
+
+        await self.storage.save()
+
     async def send_dead_message(self, participant):
         guild = self.bot.get_guild(DISCORD_PY)
         total = self.storage['stats'].dead
