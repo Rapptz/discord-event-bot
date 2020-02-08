@@ -25,7 +25,7 @@ class Emoji:
     books = '\N{BOOKS}'
     love_letter = '\N{LOVE LETTER}'
     present = '\N{WRAPPED PRESENT}'
-    airplane = '\N{AIRPLANE}'
+    airplane = '\N{AIRPLANE}\ufe0f'
     bell = '\N{BELLHOP BELL}\ufe0f'
     meditate = '\U0001f9d8'
     toilet_paper = '\U0001f9fb'
@@ -243,7 +243,7 @@ raw = [
         'description': "Go somewhere else, the sky's the limit",
         'total': 10,
         'code': dedent("""
-            channel = await ctx.request('What channel should we fly to?', commands.TextChannelConverter)
+            channel = await ctx.request('What channel should we fly to?', commands.TextChannelConverter())
             if channel is ...:
                 raise VirusError('Timed out')
             elif channel is None:
