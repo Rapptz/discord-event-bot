@@ -83,6 +83,7 @@ class State(enum.Enum):
     already_dead = 2
     cured = 3
     become_healer = 4
+    reinfect = 5
 
 @dataclasses.dataclass
 class Participant:
@@ -98,6 +99,7 @@ class Participant:
     healed: typing.List[int] = dataclasses.field(default_factory=list)
     last_heal: typing.Optional[datetime.datetime] = None
     immune_until: typing.Optional[datetime.datetime] = None
+    pda_cooldown: typing.Optional[datetime.datetime] = None
 
     data_type: dataclasses.InitVar[int] = 1
 
@@ -126,6 +128,9 @@ class Participant:
 
     def is_infectious(self):
         return self.infected and self.sickness not in (0, 100)
+
+    def can_be_touched(self, now):
+        return self.pda_cooldown is None or now > self.pda_cooldown
 
     def infect(self, *, force=False):
         if self.infected and not force:
@@ -230,6 +235,26 @@ class Participant:
         other.immune_until = now + datetime.timedelta(hours=4)
         if other.sickness != 0:
             return other.add_sickness(random.randint(-20, -10))
+
+    def hug(self, other):
+        if other.is_infectious():
+            if self.is_cured():
+                roll = random.random()
+                if roll < 0.95:
+                    return State.alive
+                return State.reinfect
+            elif self.is_susceptible():
+                roll = random.random()
+                if roll < 0.5:
+                    return State.alive
+                return State.reinfect
+
+            return self.add_sickness(random.randint(5, 10))
+
+        if not self.is_cured() and other.healer:
+            return self.add_sickness(random.randint(-10, 5))
+
+        return State.alive
 
     def to_json(self):
         o = dataclasses.asdict(self)
@@ -886,6 +911,15 @@ class Virus(commands.Cog):
             finally:
                 await self.storage.save()
                 await self.send_healer_message(user)
+        elif state is State.reinfect:
+            if cause is not None:
+                data = self.storage['stats'].people_infected
+                try:
+                    data[str(cause.member_id)] += 1
+                except KeyError:
+                    data[str(cause.member_id)] = 1
+
+            await self.reinfect(user)
 
     @backpack.command(name='use')
     async def backpack_use(self, ctx, *, emoji: str):
@@ -951,6 +985,8 @@ class Virus(commands.Cog):
             badges.append('\U0001fa78')
         if user.immune_until and user.immune_until > ctx.message.created_at:
             badges.append('\N{FLEXED BICEPS}')
+        if user.pda_cooldown and user.pda_cooldown > ctx.message.created_at:
+            badges.append('\N{HUGGING FACE}')
 
         embed.description = f'Sickness: [{user.sickness}/100]'
         embed.add_field(name='Badges', value=' '.join(badges) or 'None')
@@ -1052,6 +1088,43 @@ class Virus(commands.Cog):
             (1, "Uh... let's just hope whatever you did worked."),
         ]
         await ctx.send(weighted_random(dialogue))
+
+    @commands.command()
+    async def hug(self, ctx, *, member: discord.Member):
+        """Hugs a member."""
+
+        if ctx.author.id == member.id:
+            return await ctx.send('<:rooThink:596576798351949847>')
+
+        user = await self.get_participant(ctx.author.id)
+        other = await self.get_participant(member.id)
+        dt = ctx.message.created_at
+
+        if not other.can_be_touched(dt):
+            dialogue = [
+                "Uh, I don't think they want to be touched right now.",
+                "You shouldn't keep hugging people, it'll spread disease."
+            ]
+            return await ctx.send(random.choice(dialogue))
+
+        if not user.can_be_touched(dt):
+            return await ctx.send("Probably shouldn't be hugging people right now.")
+
+        await self.process_state(user.hug(other), user, cause=other)
+        await self.process_state(other.hug(user), other, cause=user)
+        other.pda_cooldown = dt + datetime.timedelta(hours=1)
+        user.pda_cooldown = dt + datetime.timedelta(hours=1)
+
+        await self.storage.save()
+
+        dialogue = [
+            (2, "Aw isn't that cute."),
+            (4, "Alright alright you got your hug now scram"),
+            (1, "*shudders*"),
+            (3, "<:pepoS:596577130893279272>"),
+        ]
+        await ctx.send(weighted_random(dialogue))
+
 
 def setup(bot):
     bot.add_cog(Virus(bot))
