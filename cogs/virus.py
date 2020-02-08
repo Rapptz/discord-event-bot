@@ -84,6 +84,7 @@ class State(enum.Enum):
     cured = 3
     become_healer = 4
     reinfect = 5
+    lose_healer = 6
 
 @dataclasses.dataclass
 class Participant:
@@ -698,6 +699,19 @@ class Virus(commands.Cog):
         except discord.HTTPException:
             pass
 
+    async def send_healer_remove_message(self, participant):
+        total = self.storage['stats'].healers
+
+        try:
+            ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
+        except discord.HTTPException:
+            return
+
+        try:
+            await self.log_channel.send(f'{ping} is no longer a healer due to a fatal accident. Only {total} remain now.')
+        except discord.HTTPException:
+            pass
+
     async def send_reinfect_message(self, participant):
         try:
             ping = self.bot.get_user(participant.member_id) or await self.bot.fetch_user(participant.member_id)
@@ -935,6 +949,16 @@ class Virus(commands.Cog):
                     data[str(cause.member_id)] = 1
 
             await self.reinfect(user)
+        elif state is State.lose_healer:
+            self.storage['stats'].healers -= 1
+            user.healer = False
+            try:
+                await member.remove_roles(discord.Object(id=HEALER_ROLE_ID))
+            except discord.HTTPException:
+                pass
+            finally:
+                await self.storage.save()
+                await self.send_healer_remove_message(user)
 
     @backpack.command(name='use')
     async def backpack_use(self, ctx, *, emoji: str):
