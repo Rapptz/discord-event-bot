@@ -205,7 +205,7 @@ raw = [
                 raise VirusError("I don't know this member.")
 
             participant = await ctx.cog.get_participant(member.id)
-            participant.backpack['{Emoji.love_letter}'] = 0
+            participant.backpack['{Emoji.love_letter}'] = 1
             chances = [(10, 'infect'), (89, 'nothing'), (1, 'kill')]
             value = weighted_random(chances)
             if value == 'infect':
