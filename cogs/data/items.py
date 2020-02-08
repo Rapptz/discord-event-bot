@@ -11,7 +11,7 @@ class Emoji:
     mask = '\U0001f637'
     bed = '\U0001f6cf\ufe0f'
     soap = '\U0001f9fc'
-    handsanitizer = '\U0001fa78'
+    handsanitizer = '\U0001f9f4'
     dna = '\U0001f9ec'
     microbe = '\U0001f9a0'
     petri_dish = '\U0001f9eb'
