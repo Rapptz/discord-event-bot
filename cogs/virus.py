@@ -219,6 +219,9 @@ class Participant:
         return state
 
     def heal(self, other):
+        if self.is_dead():
+            raise VirusError('<:rooThink:596576798351949847>')
+
         if other.is_dead():
             raise VirusError("I'm afraid they're already dead.")
 
