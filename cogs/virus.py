@@ -245,7 +245,7 @@ class Participant:
                 return State.reinfect
             elif self.is_susceptible():
                 roll = random.random()
-                if roll < 0.5:
+                if roll < 0.8:
                     return State.alive
                 return State.reinfect
 
