@@ -405,6 +405,9 @@ class Virus(commands.Cog):
         try:
             return participants[string_id]
         except KeyError:
+            if string_id == str(self.bot.user.id):
+                raise VirusError('The evangelist cannot participate')
+
             participants[string_id] = participant = Participant(member_id=member_id)
             await self.storage.put('participants', participants)
             return participant
@@ -1099,7 +1102,7 @@ class Virus(commands.Cog):
     async def hug(self, ctx, *, member: discord.Member):
         """Hugs a member."""
 
-        if ctx.author.id == member.id:
+        if ctx.author.id == member.id or member.id == ctx.me.id:
             return await ctx.send('<:rooThink:596576798351949847>')
 
         user = await self.get_participant(ctx.author.id)
