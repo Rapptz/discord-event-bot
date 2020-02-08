@@ -1115,8 +1115,7 @@ class Virus(commands.Cog):
 
         await self.process_state(user.hug(other), user, cause=other)
         await self.process_state(other.hug(user), other, cause=user)
-        other.pda_cooldown = dt + datetime.timedelta(hours=1)
-        user.pda_cooldown = dt + datetime.timedelta(hours=1)
+        user.pda_cooldown = dt + datetime.timedelta(minutes=15)
 
         await self.storage.save()
 
