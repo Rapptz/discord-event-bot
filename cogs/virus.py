@@ -613,6 +613,9 @@ class Virus(commands.Cog):
         # A helper function to help apply a sickness to all
         # recent people in a channel (i.e. an area)
 
+        if not channel.permissions_for(channel.guild.me).send_messages or channel.id == EVENT_ID:
+            raise VirusError("I don't know what this channel is about")
+
         authors = {m.author async for m in channel.history(limit=100)}
         for author in authors:
             participant = await self.get_participant(author.id)
