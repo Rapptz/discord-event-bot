@@ -546,6 +546,9 @@ class Virus(commands.Cog):
             self.storage['stats'].cured -= 1
         elif user.is_susceptible():
             return await self.infect(user)
+        elif user.is_infectious():
+            state = user.add_sickness(15)
+            return await self.process_state(state, user)
 
         user.infect(force=True)
         await self.storage.save()
