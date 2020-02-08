@@ -760,7 +760,7 @@ class Virus(commands.Cog):
             await self.surround_healing(message.channel.id, user)
 
         if user.is_susceptible():
-            if user.immune_until is None or user.immune_until < ctx.message.created_at:
+            if user.immune_until is None or user.immune_until < message.created_at:
                 await self.potentially_infect(message.channel.id, user)
         elif user.is_infectious():
             if user.immune_until is None or user.immune_until > message.created_at:
