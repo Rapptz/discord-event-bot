@@ -23,6 +23,14 @@ class Emoji:
     potato = '\N{POTATO}'
     herb = '\N{HERB}'
     books = '\N{BOOKS}'
+    love_letter = '\N{LOVE LETTER}'
+    present = '\N{WRAPPED PRESENT}'
+    airplane = '\N{AIRPLANE}'
+    bell = '\N{BELLHOP BELL}\ufe0f'
+    meditate = '\U0001f9d8'
+    toilet_paper = '\U0001f9fb'
+    gun = '\N{PISTOL}'
+    dagger = '\N{DAGGER KNIFE}\ufe0f'
 
 raw = [
     {
@@ -40,7 +48,7 @@ raw = [
         'description': 'A good night\'s rest.',
         'code': dedent("""
             if user.infected:
-                return user.add_sickness(-5)
+                return user.add_sickness(-3)
         """),
     },
     {
@@ -183,5 +191,92 @@ raw = [
                 return State.become_healer
         """),
         'predicate': 'return not user.healer'
+    },
+    {
+        'emoji': Emoji.love_letter,
+        'name': 'Love Letter',
+        'description': 'Send a love letter to someone in your dying breath.',
+        'total': 5,
+        'code': dedent(f"""
+            member = await ctx.request('Who do you want to send this letter to?')
+            if member is ...:
+                await ctx.send('Timed out.')
+                return
+            elif member is None:
+                await ctx.send("I don't know this member.")
+                return
+            participant = await ctx.cog.get_participant(member.id)
+            participant.backpack['{Emoji.love_letter}'] = 0
+            if participant.is_susceptible():
+                roll = random.random()
+                if roll < 0.1:
+                    await ctx.cog.infect(participant)
+        """),
+        'predicate': 'return user.sickness >= 70'
+    },
+    {
+        'emoji': Emoji.present,
+        'name': 'Mystery Gift',
+        'description': "I wonder what's inside",
+        'total': 20,
+        'code': dedent("""
+            if user.is_susceptible():
+                roll = random.random()
+                if roll < 0.25:
+                    await ctx.cog.infect(user)
+            elif user.infected:
+                roll = weighted_random([(1, 'a'), (3, 'b'), (6, 'c')])
+                if roll == 'a':
+                    await ctx.silent_react('\N{COLLISION SYMBOL}')
+                    return State.dead
+                elif roll == 'b':
+                    return user.add_sickness(-10)
+                else:
+                    return user.add_sickness(random.randint(10, 20))
+        """)
+    },
+    {
+        'emoji': Emoji.airplane,
+        'name': 'Fly',
+        'description': "Go somewhere else, the sky's the limit",
+        'total': 10,
+        'code': dedent("""
+            channel = await ctx.request('What channel should we fly to?', commands.TextChannelConverter)
+            if channel is ...:
+                await ctx.send('Timed out')
+                return
+            elif channel is None:
+                await ctx.send('Invalid channel')
+                return
+
+            if user.healer:
+                # Healers have a higher chance of healing
+                rates = [(20, -20), (65, -5), (5, 20), (10, 15)]
+            elif user.infected:
+                rates = [(65, 20), (5, -5), (20, 10), (10, 15)]
+            else:
+                rates = [(90, 0), (5, -5), (5, 5)]
+
+            sickness = weighted_random(rates)
+            await ctx.cog.apply_sickness_to_all(channel, sickness, cause=user)
+        """)
+    },
+    {
+        'emoji': Emoji.bell,
+        'name': "Evangelist's Bell",
+        'description': "Probably not a good idea to touch this one...",
+        'total': 25,
+        'code': dedent("""
+            rates = [(75, 'infect'), (2, 'cure'), (3, 'die'), (20, 'healer')]
+            roll = weighted_random(rates)
+            if roll == 'infect':
+                await ctx.cog.reinfect(user)
+            elif roll == 'cure':
+                await ctx.cog.cure(user)
+            elif roll == 'die':
+                await ctx.cog.kill(user)
+            elif roll == 'healer':
+                return State.become_healer
+        """)
     }
 ]
