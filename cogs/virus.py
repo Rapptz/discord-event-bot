@@ -909,6 +909,7 @@ class Virus(commands.Cog):
             await self.cure(user)
         elif state is State.become_healer:
             self.storage['stats'].healers += 1
+            user.healer = True
             try:
                 await member.add_roles(discord.Object(id=HEALER_ROLE_ID))
             except discord.HTTPException:
