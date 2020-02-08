@@ -133,6 +133,17 @@ class Participant:
     def can_be_touched(self, now):
         return self.pda_cooldown is None or now > self.pda_cooldown
 
+    def missing_research_items(self):
+        items = {
+            '\U0001f9ec',
+            '\U0001f9a0',
+            '\U0001f9eb',
+            '\U0001f9ea',
+            '\N{MICROSCOPE}',
+        }
+
+        return items - set(self.backpack)
+
     def infect(self, *, force=False):
         if self.infected and not force:
             return False
