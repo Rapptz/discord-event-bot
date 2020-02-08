@@ -1158,6 +1158,17 @@ class Virus(commands.Cog):
         other = await self.get_participant(member.id)
         dt = ctx.message.created_at
 
+        if user.is_dead():
+            return await ctx.send('How do you expect to hug someone as a rotting corpse?')
+
+        if other.is_dead():
+            dialogue = [
+                "Let's leave the dead body alone...",
+                "Hugging a lifeless corpse isn't a good look you know",
+                "You'll get in trouble if you keep playing with the dead."
+            ]
+            return await ctx.send(random.choice(dialogue))
+
         if not other.can_be_touched(dt):
             dialogue = [
                 "Uh, I don't think they want to be touched right now.",
