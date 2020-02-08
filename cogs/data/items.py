@@ -204,6 +204,9 @@ raw = [
             elif member is None:
                 raise VirusError("I don't know this member.")
 
+            if member.id == user.member_id:
+                raise VirusError("Uh, you probably want to send that to someone else.")
+
             participant = await ctx.cog.get_participant(member.id)
             participant.backpack['{Emoji.love_letter}'] = 1
             chances = [(10, 'infect'), (89, 'nothing'), (1, 'kill')]
@@ -220,7 +223,7 @@ raw = [
         'emoji': Emoji.present,
         'name': 'Mystery Gift',
         'description': "I wonder what's inside",
-        'total': 20,
+        'total': 100,
         'code': dedent("""
             if user.is_susceptible():
                 roll = random.random()
@@ -318,6 +321,7 @@ raw = [
         'emoji': Emoji.dagger,
         'name': 'Dagger',
         'description': 'Found this laying around somewhere',
+        'total': 20,
         'uses': 2,
         'code': dedent("""
             if user.is_infectious():
