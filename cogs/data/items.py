@@ -206,10 +206,13 @@ raw = [
 
             participant = await ctx.cog.get_participant(member.id)
             participant.backpack['{Emoji.love_letter}'] = 0
-            if participant.is_susceptible():
-                roll = random.random()
-                if roll < 0.1:
-                    await ctx.cog.infect(participant)
+            chances = [(10, 'infect'), (89, 'nothing'), (1, 'kill')]
+            value = weighted_random(chances)
+            if value == 'infect':
+                await ctx.cog.reinfect(participant)
+            elif value == 'kill':
+                await ctx.silent_react('\N{COLLISION SYMBOL}')
+                return State.dead
         """),
         'predicate': 'return user.sickness >= 70'
     },
