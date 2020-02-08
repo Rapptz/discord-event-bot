@@ -879,6 +879,8 @@ class Virus(commands.Cog):
 
             if item.uses == 0:
                 prefix = 'Special Item'
+            elif uses == 0:
+                continue
             else:
                 prefix = f'uses: {uses}/{item.uses}'
 
