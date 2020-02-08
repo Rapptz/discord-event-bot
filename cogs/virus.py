@@ -252,6 +252,11 @@ class Participant:
                 if roll < 0.8:
                     return State.alive
                 return State.reinfect
+            elif self.healer:
+                roll = random.random()
+                if roll < 0.25:
+                    return State.reinfect
+                return State.alive
 
             return self.add_sickness(random.randint(5, 10))
 
