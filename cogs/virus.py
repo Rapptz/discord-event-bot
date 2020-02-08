@@ -213,6 +213,9 @@ class Participant:
         if other.is_cured():
             raise VirusError("You can't heal those who are already cured.")
 
+        if not other.infected:
+            raise VirusError("No point in healing those who aren't sick")
+
         if other.healer:
             raise VirusError("I'm sure they know how to treat themselves, we've got others to worry about for now.")
 
@@ -969,7 +972,7 @@ class Virus(commands.Cog):
 
         if state is State.already_dead:
             return await ctx.send("The dead can't use items...")
-        else:
+        elif state is not None:
             await self.process_state(state, user, member=ctx.author)
 
         await ctx.send('The item was used... I wonder what happened?')
