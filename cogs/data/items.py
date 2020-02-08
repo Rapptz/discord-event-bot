@@ -279,4 +279,57 @@ raw = [
                 return State.become_healer
         """)
     },
+    {
+        'emoji': Emoji.gun,
+        'name': 'Water Gun',
+        'description': 'Have some fun and shoot someone with a little water',
+        'total': 20,
+        'uses': 6,
+        'code': dedent("""
+            member = await ctx.request('Who do you want to shoot?')
+            if member is ...:
+                raise VirusError("Timed out")
+            elif member is None:
+                raise VirusError("I don't know this member.")
+
+            participant = await ctx.cog.get_participant(member.id)
+            if participant.death is not None:
+                raise VirusError("It's rude to play with the dead.")
+
+            chance = [(1, 'die'), (5, 'dud')]
+            if weighted_random(chance) == 'die':
+                return await ctx.cog.process_state(State.dead, participant, cause=user)
+
+            if participant.is_cured():
+                if random.randint(0, 5) == 5:
+                    await ctx.cog.process_state(State.reinfect, participant, cause=user)
+                return
+
+            if user.infected:
+                sickness = random.randint(5, 20)
+            else:
+                sickness = random.randint(-10, 10)
+
+            state = participant.add_sickness(sickness)
+            await ctx.cog.process_state(state, participant, cause=user)
+        """)
+    },
+    {
+        'emoji': Emoji.dagger,
+        'name': 'Dagger',
+        'description': 'Found this laying around somewhere',
+        'uses': 2,
+        'code': dedent("""
+            if user.is_infectious():
+                return user.add_sickness(random.randint(10, 50))
+
+            if user.is_susceptible():
+                if random.randint(0, 1) == 0:
+                    await ctx.cog.infect(user)
+
+            if user.healer:
+                if random.randint(0, 1) == 0:
+                    return State.lose_healer
+        """)
+    }
 ]
