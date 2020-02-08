@@ -200,11 +200,10 @@ raw = [
         'code': dedent(f"""
             member = await ctx.request('Who do you want to send this letter to?')
             if member is ...:
-                await ctx.send('Timed out.')
-                return
+                raise VirusError("Timed out")
             elif member is None:
-                await ctx.send("I don't know this member.")
-                return
+                raise VirusError("I don't know this member.")
+
             participant = await ctx.cog.get_participant(member.id)
             participant.backpack['{Emoji.love_letter}'] = 0
             if participant.is_susceptible():
@@ -243,11 +242,9 @@ raw = [
         'code': dedent("""
             channel = await ctx.request('What channel should we fly to?', commands.TextChannelConverter)
             if channel is ...:
-                await ctx.send('Timed out')
-                return
+                raise VirusError('Timed out')
             elif channel is None:
-                await ctx.send('Invalid channel')
-                return
+                raise VirusError('Invalid channel')
 
             if user.healer:
                 # Healers have a higher chance of healing
@@ -278,5 +275,5 @@ raw = [
             elif roll == 'healer':
                 return State.become_healer
         """)
-    }
+    },
 ]
