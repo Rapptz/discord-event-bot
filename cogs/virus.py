@@ -216,12 +216,12 @@ class Participant:
         if other.healer:
             raise VirusError("I'm sure they know how to treat themselves, we've got others to worry about for now.")
 
-        tomorrow = tomorrow_date()
         now = datetime.datetime.utcnow()
         if other.immune_until and other.immune_until >= now:
             raise VirusError("This person seems to have already been treated, let them go for now.")
 
-        if self.last_heal and self.last_heal >= tomorrow:
+        tomorrow = tomorrow_date(self.last_heal or now)
+        if now >= tomorrow:
             self.healed = []
 
         if len(self.healed) >= MAX_ALLOWED_HEALS:
@@ -1120,7 +1120,7 @@ class Virus(commands.Cog):
         await self.storage.save()
 
         dialogue = [
-            (2, "Aw isn't that cute."),
+            (2, "Aw isn't that cute. You hugged someone!"),
             (4, "Alright alright you got your hug now scram"),
             (1, "*shudders*"),
             (3, "<:pepoS:596577130893279272>"),
