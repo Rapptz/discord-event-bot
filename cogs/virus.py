@@ -1236,12 +1236,23 @@ class Virus(commands.Cog):
         if user.is_dead():
             return await ctx.send("Uh... you're dead, can't do research if you're dead.")
 
-        if len(user.missing_research_items()) != 0:
+        items = {
+            '\U0001f9ec',
+            '\U0001f9a0',
+            '\U0001f9eb',
+            '\U0001f9ea',
+            '\N{MICROSCOPE}',
+        }
+
+        if len(items - set(user.backpack)) != 0:
             return await ctx.send('You do not have the requirements to do this.')
 
         item = discord.utils.get(self.storage['store'], emoji='\N{SYRINGE}')
         if item is None:
             return await ctx.send('Tell Danny this happened?')
+
+        for x in items:
+            del user.backpack[x]
 
         item.in_stock = 10
         item.total = 10
