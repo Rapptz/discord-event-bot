@@ -1,5 +1,5 @@
 from discord.ext import commands
-from collections import deque, defaultdict
+from collections import deque, defaultdict, Counter
 from collections.abc import Sequence
 from bisect import bisect_left
 
@@ -1143,6 +1143,19 @@ class Virus(commands.Cog):
 
         e.add_field(name='Most Sick', value=most_sick or 'No one')
         e.add_field(name='Least Sick', value=least_sick or 'No one')
+
+        most_cured = Counter(stats.people_cured)
+        most_cured = '\n'.join(f'{i + 1}) <@{m}> {total} cured' for (i, (m, total)) in enumerate(most_cured.most_common(5)))
+        e.add_field(name='Top Curers', value=most_cured or 'No one', inline=False)
+
+        most_infected = Counter(stats.people_infected)
+        most_infected = '\n'.join(f'{i + 1}) <@{m}> {total} infected' for (i, (m, total)) in enumerate(most_infected.most_common(5)))
+        e.add_field(name='Most Contagious', value=most_infected or 'No one')
+
+        top_killers = Counter(stats.people_killed)
+        top_killers = '\n'.join(f'{i + 1}) <@{m}> {total} killed' for (i, (m, total)) in enumerate(top_killers.most_common(5)))
+        e.add_field(name='Top Killers', value=top_killers or 'No one')
+
         await ctx.send(embed=e)
 
     @commands.command()
@@ -1220,6 +1233,9 @@ class Virus(commands.Cog):
         """Research a cure"""
 
         user = await self.get_participant(ctx.author.id)
+        if user.is_dead():
+            return await ctx.send("Uh... you're dead, can't do research if you're dead.")
+
         if len(user.missing_research_items()) != 0:
             return await ctx.send('You do not have the requirements to do this.')
 
