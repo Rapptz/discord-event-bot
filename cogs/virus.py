@@ -24,6 +24,8 @@ HEALER_ROLE_ID = 674838998736437248
 DISCORD_PY = 336642139381301249
 MOD_TESTING_ID = 568662293190148106
 MAX_ALLOWED_HEALS = 3
+MAX_VACCINE = 25
+VACCINE_MILESTONES = (5, 10, 15, 20, MAX_VACCINE)
 
 # GENERAL_ID = 182325885867786241
 # SNAKE_PIT_ID = 182328316676538369
@@ -345,6 +347,7 @@ class Stats:
     healers: int = 0
     dead: int = 0
     cured: int = 0
+    vaccinated: int = 0
 
     people_cured: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
     people_infected: typing.Dict[str, int] = dataclasses.field(default_factory=dict)
@@ -402,11 +405,14 @@ class Virus(commands.Cog):
         }
 
     def cog_check(self, ctx):
-        return ctx.guild and ctx.guild.id == DISCORD_PY and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID, MOD_TESTING_ID)
+        return not self.is_over() and ctx.channel.id in (TESTING_ID, SNAKE_PIT_ID, MOD_TESTING_ID)
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, VirusError):
             await ctx.send(error)
+
+    def is_over(self):
+        return self.storage['stats'].vaccinated >= MAX_VACCINE
 
     @staticmethod
     def get_unique(number, elements, already_seen):
@@ -744,12 +750,28 @@ class Virus(commands.Cog):
         except discord.HTTPException:
             return
 
+    async def vaccinate(self, user):
+        self.storage['stats'].vaccinated += 1
+        await self.storage.save()
+        vaccinated = self.storage['stats'].vaccinated
+
+        if vaccinated in VACCINE_MILESTONES:
+            if self.is_over():
+                msg = f"\N{CHEERING MEGAPHONE} It seems this virus has finally been eradicated \N{PARTY POPPER}"
+            else:
+                msg = f'\N{CHEERING MEGAPHONE} It seems we have {vaccinated} vaccinated now.'
+
+            await self.log_channel.send(msg)
+
     @commands.Cog.listener()
     async def on_regular_message(self, message):
         if message.guild is None or message.guild.id != DISCORD_PY:
             return
 
         if message.author.id == self.bot.user.id:
+            return
+
+        if self.is_over():
             return
 
         user = await self.get_participant(message.author.id)
@@ -1193,6 +1215,23 @@ class Virus(commands.Cog):
         ]
         await ctx.send(weighted_random(dialogue))
 
+    @commands.command()
+    async def research(self, ctx):
+        """Research a cure"""
+
+        user = await self.get_participant(ctx.author.id)
+        if len(user.missing_research_items()) != 0:
+            return await ctx.send('You do not have the requirements to do this.')
+
+        item = discord.utils.get(self.storage['store'], emoji='\N{SYRINGE}')
+        if item is None:
+            return await ctx.send('Tell Danny this happened?')
+
+        item.in_stock = 10
+        item.total = 10
+        item.unlocked = True
+        await self.storage.save()
+        await self.log_channel.send(f'\N{CHEERING MEGAPHONE} {ctx.author.mention} seems to have found a cure? Check the store')
 
 def setup(bot):
     bot.add_cog(Virus(bot))

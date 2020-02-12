@@ -120,17 +120,12 @@ raw = [
     },
     {
         'emoji': Emoji.syringe,
-        'name': 'Donate Blood',
-        'description': 'Donating blood for those in need might be helpful',
+        'name': 'Vaccine',
+        'description': 'A cure',
         'total': 10,
         'code': dedent("""
-            if user.immunocompromised:
-                return user.add_sickness(random.randint(20, 40))
-            if user.infected:
-                return user.add_sickness(random.randint(10, 15))
-            return user.add_sickness(random.randint(-15, 15))
-        """),
-        'predicate': 'return user.is_infectious()'
+            await ctx.cog.vaccinate(user)
+        """)
     },
     {
         'emoji': Emoji.shower,
@@ -306,6 +301,10 @@ raw = [
             if participant.is_cured():
                 if random.randint(0, 5) == 5:
                     await ctx.cog.process_state(State.reinfect, participant, cause=user)
+                return
+
+            if participant.is_susceptible():
+                await ctx.cog.infect(participant)
                 return
 
             if user.infected:
