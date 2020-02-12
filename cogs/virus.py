@@ -1251,6 +1251,9 @@ class Virus(commands.Cog):
         if item is None:
             return await ctx.send('Tell Danny this happened?')
 
+        if item.in_stock:
+            return await ctx.send('Hey, we already have some vaccines in stock right now.')
+
         for x in items:
             del user.backpack[x]
 
