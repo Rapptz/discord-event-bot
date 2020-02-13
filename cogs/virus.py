@@ -126,6 +126,9 @@ class Participant:
     def is_cured(self):
         return self.infected and self.sickness == 0
 
+    def is_vaccinated(self):
+        return '\N{SYRINGE}' in self.backpack
+
     def is_susceptible(self):
         return not self.infected and not self.healer
 
@@ -171,6 +174,9 @@ class Participant:
 
         if self.is_dead():
             return State.already_dead
+
+        if self.is_vaccinated() or self.is_cured():
+            return State.alive
 
         if number is None:
             # 1% chance of gaining +3
@@ -751,6 +757,7 @@ class Virus(commands.Cog):
             return
 
     async def vaccinate(self, user):
+        user.sickness = 0
         self.storage['stats'].vaccinated += 1
         await self.storage.save()
         vaccinated = self.storage['stats'].vaccinated
@@ -1132,7 +1139,8 @@ class Virus(commands.Cog):
         stats = self.storage['stats']
         participants = self.storage['participants'].values()
         msg = f'Total Participants: {len(participants)}\nDead: {stats.dead}\n' \
-              f'Infected: {stats.infected - stats.cured - stats.dead}\nHealers: {stats.healers}\nCured: {stats.cured}\n'
+              f'Infected: {stats.infected - stats.cured - stats.dead}\nHealers: {stats.healers}\nCured: {stats.cured}\n' \
+              f'Vaccinated: {stats.vaccinated}'
 
         e = discord.Embed(title='Stats')
         e.description = msg
