@@ -792,7 +792,7 @@ class Virus(commands.Cog):
             if user.immune_until is None or user.immune_until < message.created_at:
                 await self.potentially_infect(message.channel.id, user)
         elif user.is_infectious():
-            if user.immune_until is None or user.immune_until > message.created_at:
+            if user.immune_until is None or user.immune_until < message.created_at:
                 state = user.add_sickness()
                 await self.process_state(state, user)
 
